@@ -38,8 +38,8 @@
         const tg = window.Telegram.WebApp;
         tg.expand(); 
 
-        // ТВОЙ ID ДЛЯ ЗАКАЗОВ
-        const ADMIN_ID = '984929835';
+        // ТВОЙ НИКНЕЙМ (без @, скрипт добавит сам)
+        const ADMIN_USERNAME = 'GavAlexandr'; 
 
         const products = [
             { id: 42, name: "Лот 42 🌸", desc: "Размер: 42-44", price: 2500, image: "img/dress1.jpg", category: "adult" },
@@ -109,10 +109,9 @@
         }
 
         function sendOrder() {
-            // 1. Формируем текст сообщения
+            // Формируем текст
             let message = "ЗАКАЗ АРЕНДЫ (Dress Shop):\n\n";
             let total = 0;
-
             for (let id in cart) {
                 const p = cart[id];
                 if (p.count > 0) {
@@ -122,24 +121,21 @@
             }
             message += `💰 ИТОГО: ${total} ₽`;
 
-            // 2. Показываем попап подтверждения
+            // Показываем подтверждение
             tg.showPopup({
-                title: 'Оформление заказа',
-                message: `Общая сумма: ${total} ₽\n\nНажмите "Отправить", чтобы перейти в чат с администратором.`,
+                title: 'Ваш заказ',
+                message: `Сумма: ${total} ₽\n\nНажмите "Отправить", чтобы перейти в чат.`,
                 buttons: [
-                    {id: 'send', type: 'default', text: 'Отправить'},
+                    {id: 'go', type: 'default', text: 'Отправить'},
                     {id: 'cancel', type: 'destructive', text: 'Отмена'}
                 ]
             }, function(btnId) {
-                if (btnId === 'send') {
-                    // 3. Копируем текст в буфер обмена
-                    navigator.clipboard.writeText(message).then(() => {
-                        // 4. Открываем личку по ID
-                        tg.openTelegramLink('tg://user?id=' + ADMIN_ID);
-                    }).catch(err => {
-                        // Если копирование не удалось, пробуем просто открыть ссылку
-                        tg.openTelegramLink('tg://user?id=' + ADMIN_ID);
-                    });
+                if (btnId === 'go') {
+                    // Генерируем ссылку для открытия чата с предзаполненным текстом
+                    const url = `https://t.me/${ADMIN_USERNAME}?text=${encodeURIComponent(message)}`;
+                    
+                    // Открываем ссылку через метод Telegram WebApp
+                    tg.openTelegramLink(url);
                 }
             });
         }
