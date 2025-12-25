@@ -2,210 +2,205 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Dress Rental</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Каталог Платьев</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
-
     <style>
-        :root {
-            --bg: #ffffff;
-            --text: #000000;
-            --accent: #E91E63; /* Цвет "Фэшн" (Маджента) */
-            --card-bg: #f9f9f9;
-        }
-
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); }
+        
+        /* Стили для фильтров */
+        .filters {
+            display: flex;
+            gap: 10px;
             padding: 15px;
-            padding-bottom: 80px; /* Место под кнопку */
+            overflow-x: auto; /* Прокрутка, если кнопок много */
+            white-space: nowrap;
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-
-        /* Заголовок */
-        header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 20px;
-        }
-        h1 { font-size: 1.5rem; margin: 0; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-        .filter-tag { font-size: 0.8rem; background: #eee; padding: 5px 10px; border-radius: 20px; color: #666; }
-
-        /* Сетка товаров */
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* Две колонки */
-            gap: 15px;
-        }
-
-        /* Карточка платья */
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            transition: 0.2s;
-        }
-        .card:active { transform: scale(0.98); }
-
-        .card-img {
-            width: 100%;
-            height: 220px; /* Высота фото */
-            object-fit: cover;
-            background-color: #ddd;
-        }
-
-        .card-info { padding: 10px; }
-        .card-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .card-meta { display: flex; justify-content: space-between; font-size: 0.8rem; color: #666; }
-        .card-price { font-weight: 700; color: var(--text); }
-
-        /* Кнопка добавления */
-        .add-btn {
-            width: 100%;
-            padding: 8px;
-            margin-top: 10px;
-            background: #000;
-            color: #fff;
+        
+        .filter-btn {
+            padding: 8px 16px;
             border: none;
-            border-radius: 6px;
-            font-size: 0.8rem;
+            border-radius: 20px;
+            background: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #fff);
+            font-size: 14px;
             cursor: pointer;
-        }
-        .add-btn.added { background: var(--accent); }
-
-        /* Главная кнопка внизу (Main Button) */
-        /* В Telegram она нативная, но для теста в браузере сделаем свою */
-        #order-btn {
-            position: fixed; bottom: 20px; left: 20px; right: 20px;
-            background: var(--accent); color: white;
-            padding: 15px; border-radius: 12px;
-            text-align: center; font-weight: 700; font-size: 1rem;
-            box-shadow: 0 5px 20px rgba(233, 30, 99, 0.4);
-            display: none; /* Скрыта, пока корзина пуста */
-            cursor: pointer;
+            opacity: 0.6; /* Неактивная кнопка чуть прозрачная */
+            transition: 0.3s;
         }
 
+        .filter-btn.active {
+            opacity: 1; /* Активная кнопка яркая */
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .container { padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 80px; }
+        
+        .card { border-radius: 12px; overflow: hidden; background: var(--tg-theme-secondary-bg-color, #f5f5f5); position: relative; display: flex; flex-direction: column; }
+        .card img { width: 100%; height: 180px; object-fit: cover; }
+        .card-body { padding: 10px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .card-title { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
+        .card-desc { font-size: 12px; opacity: 0.8; margin-bottom: 8px; }
+        .card-price { font-size: 15px; font-weight: bold; color: var(--tg-theme-button-color, #3390ec); }
+        
+        /* Кнопка добавить */
+        .add-btn { width: 100%; padding: 8px; margin-top: 5px; border: none; border-radius: 8px; background-color: var(--tg-theme-button-color, #3390ec); color: white; cursor: pointer; }
+        
+        /* Счетчик на товаре */
+        .counter { position: absolute; top: 10px; right: 10px; background: #3390ec; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: none; }
+        
+        /* Нижняя кнопка заказа */
+        .main-btn { position: fixed; bottom: 10px; left: 10px; right: 10px; padding: 15px; border: none; border-radius: 12px; background: #31b545; color: white; font-size: 16px; font-weight: bold; text-transform: uppercase; display: none; cursor: pointer; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>The Dress</h1>
-    <div class="filter-tag">Все размеры ▾</div>
-</header>
-
-<div class="grid" id="catalog">
+    <div class="filters">
+        <button class="filter-btn active" onclick="filterProducts('all', this)">Все</button>
+        <button class="filter-btn" onclick="filterProducts('adult', this)">Взрослые</button>
+        <button class="filter-btn" onclick="filterProducts('child_3_7', this)">Дети 3-7 лет</button>
+        <button class="filter-btn" onclick="filterProducts('child_10_13', this)">Дети 10-13 лет</button>
     </div>
 
-<div id="order-btn" onclick="sendOrder()">
-    Оформить аренду (<span id="count">0</span>)
-</div>
+    <div class="container" id="products-container"></div>
 
-<script>
-    // 1. Инициализация Telegram WebApp
-    const tg = window.Telegram.WebApp;
-    tg.expand(); // Раскрыть на весь экран
+    <button class="main-btn" id="order-btn" onclick="sendOrder()">Оформить аренду</button>
 
-    // 2. База данных платьев (Просто массив)
-    // Заказчик жены даст фото и цены, ты просто впишешь их сюда.
-    const dresses = [
-        { id: 1, name: "Black Velvet", size: "S/M", price: 3500, img: "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?auto=format&fit=crop&w=600&q=80" },
-        { id: 2, name: "Red Carpet", size: "XS", price: 5000, img: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80" },
-        { id: 3, name: "White Silk", size: "M", price: 4200, img: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=600&q=80" },
-        { id: 4, name: "Sparkle Night", size: "L", price: 6000, img: "https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=600&q=80" }
-    ];
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); 
 
-    let cart = [];
-
-    // 3. Функция отрисовки каталога
-    function render() {
-        const container = document.getElementById('catalog');
-        container.innerHTML = dresses.map(item => `
-            <div class="card">
-                <img src="${item.img}" class="card-img" onclick="viewPhoto('${item.img}')">
-                <div class="card-info">
-                    <div class="card-title">${item.name}</div>
-                    <div class="card-meta">
-                        <span>${item.size}</span>
-                        <span class="card-price">${item.price} ₽</span>
-                    </div>
-                    <button class="add-btn" id="btn-${item.id}" onclick="toggleCart(${item.id})">
-                        В корзину
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    // 4. Логика корзины
-    function toggleCart(id) {
-        const btn = document.getElementById(`btn-${id}`);
-        const item = dresses.find(d => d.id === id);
-
-        if (cart.includes(id)) {
-            // Убрать
-            cart = cart.filter(c => c !== id);
-            btn.innerText = "В корзину";
-            btn.classList.remove('added');
-        } else {
-            // Добавить
-            cart.push(id);
-            btn.innerText = "✔ Выбрано";
-            btn.classList.add('added');
-        }
-
-        updateMainButton();
-    }
-
-    // 5. Управление главной кнопкой
-    function updateMainButton() {
-        const btn = document.getElementById('order-btn');
-        const countSpan = document.getElementById('count');
-        
-        if (cart.length > 0) {
-            btn.style.display = 'block';
-            countSpan.innerText = cart.length;
-            
-            // Если мы в Телеграме, используем нативную кнопку MainButton
-            if (tg.MainButton) {
-                tg.MainButton.text = `ЗАБРОНИРОВАТЬ (${cart.length})`;
-                tg.MainButton.show();
-                tg.MainButton.onClick(sendOrder);
+        // === БАЗА ДАННЫХ ===
+        // category: 'adult', 'child_3_7', 'child_10_13'
+        const products = [
+            {
+                id: 42,
+                name: "Лот 42 🌸",
+                desc: "Размер: 42-44",
+                price: 2500,
+                image: "img/dress1.jpg", // Не забудь закинуть dress1.jpg в папку img
+                category: "adult" 
+            },
+            {
+                id: 2,
+                name: "Принцесса (Розовое)",
+                desc: "Рост 116-122",
+                price: 1500,
+                image: "img/dress2.jpg",
+                category: "child_3_7"
+            },
+            {
+                id: 3,
+                name: "Вечерний блеск",
+                desc: "Рост 146-152",
+                price: 1800,
+                image: "img/dress3.jpg",
+                category: "child_10_13"
+            },
+            {
+                id: 4,
+                name: "Черное бархатное",
+                desc: "Размер: 44-46",
+                price: 3000,
+                image: "img/dress4.jpg",
+                category: "adult"
             }
-        } else {
-            btn.style.display = 'none';
-            if (tg.MainButton) tg.MainButton.hide();
+        ];
+
+        let cart = {};
+
+        // Функция отображения товаров
+        function renderProducts(filter = 'all') {
+            const container = document.getElementById('products-container');
+            container.innerHTML = ""; // Очищаем
+
+            // Фильтруем список
+            const filtered = products.filter(p => filter === 'all' || p.category === filter);
+
+            filtered.forEach(p => {
+                const count = cart[p.id] ? cart[p.id].count : 0;
+                
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="counter" style="display: ${count > 0 ? 'block' : 'none'}">${count} шт</div>
+                    <img src="${p.image}" alt="${p.name}" onerror="this.src='https://placehold.co/300x400?text=Нет+фото'">
+                    <div class="card-body">
+                        <div>
+                            <div class="card-title">${p.name}</div>
+                            <div class="card-desc">${p.desc}</div>
+                        </div>
+                        <div class="card-price">${p.price.toLocaleString()} ₽</div>
+                        <button class="add-btn" onclick="addToCart(${p.id})">
+                            ${count > 0 ? 'Добавить ещё' : 'Выбрать'}
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
         }
-    }
 
-    // 6. Отправка заказа боту
-    function sendOrder() {
-        const selectedItems = dresses.filter(d => cart.includes(d.id));
-        
-        // Формируем красивое сообщение для менеджера
-        const data = {
-            items: selectedItems.map(i => `${i.name} (${i.size})`),
-            total: selectedItems.reduce((a, b) => a + b.price, 0)
-        };
+        // Логика фильтров
+        function filterProducts(category, btn) {
+            // Подсветка кнопок
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Перерисовка
+            renderProducts(category);
+        }
 
-        // Отправляем данные обратно в бота
-        tg.sendData(JSON.stringify(data)); 
-    }
-    
-    // Просто просмотр фото (увеличение)
-    function viewPhoto(url) {
-        tg.showPopup({
-            title: 'Фото платья',
-            message: 'Нравится?',
-            buttons: [{type: 'ok'}]
-        });
-    }
+        // Добавление в корзину
+        function addToCart(id) {
+            if (!cart[id]) {
+                const product = products.find(p => p.id === id);
+                cart[id] = { ...product, count: 0 };
+            }
+            cart[id].count++;
+            
+            // Находим активную кнопку фильтра, чтобы не сбить фильтр при обновлении
+            const activeBtn = document.querySelector('.filter-btn.active');
+            const currentCategory = activeBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
+            
+            renderProducts(currentCategory);
+            updateMainButton();
+        }
 
-    render();
-</script>
+        // Кнопка заказа
+        function updateMainButton() {
+            let total = 0;
+            for (let id in cart) total += cart[id].price * cart[id].count;
 
+            const btn = document.getElementById('order-btn');
+            if (total > 0) {
+                btn.style.display = "block";
+                btn.innerText = `ОФОРМИТЬ АРЕНДУ НА ${total.toLocaleString()} ₽`;
+            } else {
+                btn.style.display = "none";
+            }
+        }
+
+        // Отправка в бота
+        function sendOrder() {
+            let items = [];
+            let total = 0;
+            for (let id in cart) {
+                const p = cart[id];
+                items.push(`${p.name} (${p.desc}) x${p.count} - ${p.price * p.count}р`);
+                total += p.price * p.count;
+            }
+            const data = { items: items, total: total };
+            tg.sendData(JSON.stringify(data));
+        }
+
+        // Запуск при старте
+        renderProducts();
+
+    </script>
 </body>
 </html>
