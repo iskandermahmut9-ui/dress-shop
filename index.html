@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dress Rental</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #000000;
+            --accent: #E91E63; /* Цвет "Фэшн" (Маджента) */
+            --card-bg: #f9f9f9;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 15px;
+            padding-bottom: 80px; /* Место под кнопку */
+        }
+
+        /* Заголовок */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        h1 { font-size: 1.5rem; margin: 0; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .filter-tag { font-size: 0.8rem; background: #eee; padding: 5px 10px; border-radius: 20px; color: #666; }
+
+        /* Сетка товаров */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Две колонки */
+            gap: 15px;
+        }
+
+        /* Карточка платья */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: 0.2s;
+        }
+        .card:active { transform: scale(0.98); }
+
+        .card-img {
+            width: 100%;
+            height: 220px; /* Высота фото */
+            object-fit: cover;
+            background-color: #ddd;
+        }
+
+        .card-info { padding: 10px; }
+        .card-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-meta { display: flex; justify-content: space-between; font-size: 0.8rem; color: #666; }
+        .card-price { font-weight: 700; color: var(--text); }
+
+        /* Кнопка добавления */
+        .add-btn {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            background: #000;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .add-btn.added { background: var(--accent); }
+
+        /* Главная кнопка внизу (Main Button) */
+        /* В Telegram она нативная, но для теста в браузере сделаем свою */
+        #order-btn {
+            position: fixed; bottom: 20px; left: 20px; right: 20px;
+            background: var(--accent); color: white;
+            padding: 15px; border-radius: 12px;
+            text-align: center; font-weight: 700; font-size: 1rem;
+            box-shadow: 0 5px 20px rgba(233, 30, 99, 0.4);
+            display: none; /* Скрыта, пока корзина пуста */
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>The Dress</h1>
+    <div class="filter-tag">Все размеры ▾</div>
+</header>
+
+<div class="grid" id="catalog">
+    </div>
+
+<div id="order-btn" onclick="sendOrder()">
+    Оформить аренду (<span id="count">0</span>)
+</div>
+
+<script>
+    // 1. Инициализация Telegram WebApp
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Раскрыть на весь экран
+
+    // 2. База данных платьев (Просто массив)
+    // Заказчик жены даст фото и цены, ты просто впишешь их сюда.
+    const dresses = [
+        { id: 1, name: "Black Velvet", size: "S/M", price: 3500, img: "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?auto=format&fit=crop&w=600&q=80" },
+        { id: 2, name: "Red Carpet", size: "XS", price: 5000, img: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80" },
+        { id: 3, name: "White Silk", size: "M", price: 4200, img: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=600&q=80" },
+        { id: 4, name: "Sparkle Night", size: "L", price: 6000, img: "https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=600&q=80" }
+    ];
+
+    let cart = [];
+
+    // 3. Функция отрисовки каталога
+    function render() {
+        const container = document.getElementById('catalog');
+        container.innerHTML = dresses.map(item => `
+            <div class="card">
+                <img src="${item.img}" class="card-img" onclick="viewPhoto('${item.img}')">
+                <div class="card-info">
+                    <div class="card-title">${item.name}</div>
+                    <div class="card-meta">
+                        <span>${item.size}</span>
+                        <span class="card-price">${item.price} ₽</span>
+                    </div>
+                    <button class="add-btn" id="btn-${item.id}" onclick="toggleCart(${item.id})">
+                        В корзину
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 4. Логика корзины
+    function toggleCart(id) {
+        const btn = document.getElementById(`btn-${id}`);
+        const item = dresses.find(d => d.id === id);
+
+        if (cart.includes(id)) {
+            // Убрать
+            cart = cart.filter(c => c !== id);
+            btn.innerText = "В корзину";
+            btn.classList.remove('added');
+        } else {
+            // Добавить
+            cart.push(id);
+            btn.innerText = "✔ Выбрано";
+            btn.classList.add('added');
+        }
+
+        updateMainButton();
+    }
+
+    // 5. Управление главной кнопкой
+    function updateMainButton() {
+        const btn = document.getElementById('order-btn');
+        const countSpan = document.getElementById('count');
+        
+        if (cart.length > 0) {
+            btn.style.display = 'block';
+            countSpan.innerText = cart.length;
+            
+            // Если мы в Телеграме, используем нативную кнопку MainButton
+            if (tg.MainButton) {
+                tg.MainButton.text = `ЗАБРОНИРОВАТЬ (${cart.length})`;
+                tg.MainButton.show();
+                tg.MainButton.onClick(sendOrder);
+            }
+        } else {
+            btn.style.display = 'none';
+            if (tg.MainButton) tg.MainButton.hide();
+        }
+    }
+
+    // 6. Отправка заказа боту
+    function sendOrder() {
+        const selectedItems = dresses.filter(d => cart.includes(d.id));
+        
+        // Формируем красивое сообщение для менеджера
+        const data = {
+            items: selectedItems.map(i => `${i.name} (${i.size})`),
+            total: selectedItems.reduce((a, b) => a + b.price, 0)
+        };
+
+        // Отправляем данные обратно в бота
+        tg.sendData(JSON.stringify(data)); 
+    }
+    
+    // Просто просмотр фото (увеличение)
+    function viewPhoto(url) {
+        tg.showPopup({
+            title: 'Фото платья',
+            message: 'Нравится?',
+            buttons: [{type: 'ok'}]
+        });
+    }
+
+    render();
+</script>
+
+</body>
+</html>
