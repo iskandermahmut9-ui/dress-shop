@@ -3,59 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Каталог Платьев</title>
+    <title>Dress Shop</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); }
-        
-        /* Стили для фильтров */
-        .filters {
-            display: flex;
-            gap: 10px;
-            padding: 15px;
-            overflow-x: auto; /* Прокрутка, если кнопок много */
-            white-space: nowrap;
-            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .filter-btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 20px;
-            background: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #fff);
-            font-size: 14px;
-            cursor: pointer;
-            opacity: 0.6; /* Неактивная кнопка чуть прозрачная */
-            transition: 0.3s;
-        }
-
-        .filter-btn.active {
-            opacity: 1; /* Активная кнопка яркая */
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
+        body { font-family: sans-serif; margin: 0; padding: 0; background-color: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); }
+        .filters { display: flex; gap: 10px; padding: 15px; overflow-x: auto; white-space: nowrap; background: var(--tg-theme-secondary-bg-color, #f0f0f0); position: sticky; top: 0; z-index: 100; }
+        .filter-btn { padding: 8px 16px; border: none; border-radius: 20px; background: var(--tg-theme-button-color, #3390ec); color: #fff; font-size: 14px; cursor: pointer; opacity: 0.6; transition: 0.3s; }
+        .filter-btn.active { opacity: 1; font-weight: bold; }
         .container { padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 80px; }
-        
         .card { border-radius: 12px; overflow: hidden; background: var(--tg-theme-secondary-bg-color, #f5f5f5); position: relative; display: flex; flex-direction: column; }
-        .card img { width: 100%; height: 180px; object-fit: cover; }
-        .card-body { padding: 10px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .card img { width: 100%; height: 150px; object-fit: cover; }
+        .card-body { padding: 10px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
         .card-title { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
         .card-desc { font-size: 12px; opacity: 0.8; margin-bottom: 8px; }
         .card-price { font-size: 15px; font-weight: bold; color: var(--tg-theme-button-color, #3390ec); }
-        
-        /* Кнопка добавить */
         .add-btn { width: 100%; padding: 8px; margin-top: 5px; border: none; border-radius: 8px; background-color: var(--tg-theme-button-color, #3390ec); color: white; cursor: pointer; }
-        
-        /* Счетчик на товаре */
         .counter { position: absolute; top: 10px; right: 10px; background: #3390ec; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: none; }
-        
-        /* Нижняя кнопка заказа */
-        .main-btn { position: fixed; bottom: 10px; left: 10px; right: 10px; padding: 15px; border: none; border-radius: 12px; background: #31b545; color: white; font-size: 16px; font-weight: bold; text-transform: uppercase; display: none; cursor: pointer; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .main-btn { position: fixed; bottom: 15px; left: 15px; right: 15px; padding: 15px; border: none; border-radius: 12px; background: #31b545; color: white; font-size: 16px; font-weight: bold; text-transform: uppercase; display: none; cursor: pointer; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center; }
     </style>
 </head>
 <body>
@@ -63,99 +27,57 @@
     <div class="filters">
         <button class="filter-btn active" onclick="filterProducts('all', this)">Все</button>
         <button class="filter-btn" onclick="filterProducts('adult', this)">Взрослые</button>
-        <button class="filter-btn" onclick="filterProducts('child_3_7', this)">Дети 3-7 лет</button>
-        <button class="filter-btn" onclick="filterProducts('child_10_13', this)">Дети 10-13 лет</button>
+        <button class="filter-btn" onclick="filterProducts('child_3_7', this)">Дети 3-7</button>
+        <button class="filter-btn" onclick="filterProducts('child_10_13', this)">Дети 10-13</button>
     </div>
 
     <div class="container" id="products-container"></div>
-
-    <button class="main-btn" id="order-btn" onclick="sendOrder()">Оформить аренду</button>
+    <div class="main-btn" id="order-btn" onclick="sendOrder()">Оформить</div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand(); 
 
-        // === БАЗА ДАННЫХ ===
-        // category: 'adult', 'child_3_7', 'child_10_13'
         const products = [
-            {
-                id: 42,
-                name: "Лот 42 🌸",
-                desc: "Размер: 42-44",
-                price: 2500,
-                image: "img/dress1.jpg", // Не забудь закинуть dress1.jpg в папку img
-                category: "adult" 
-            },
-            {
-                id: 2,
-                name: "Принцесса (Розовое)",
-                desc: "Рост 116-122",
-                price: 1500,
-                image: "img/dress2.jpg",
-                category: "child_3_7"
-            },
-            {
-                id: 3,
-                name: "Вечерний блеск",
-                desc: "Рост 146-152",
-                price: 1800,
-                image: "img/dress3.jpg",
-                category: "child_10_13"
-            },
-            {
-                id: 4,
-                name: "Черное бархатное",
-                desc: "Размер: 44-46",
-                price: 3000,
-                image: "img/dress4.jpg",
-                category: "adult"
-            }
+            { id: 42, name: "Лот 42 🌸", desc: "Размер: 42-44", price: 2500, image: "img/dress1.jpg", category: "adult" },
+            { id: 2, name: "Принцесса", desc: "Рост 116-122", price: 1500, image: "img/dress2.jpg", category: "child_3_7" },
+            { id: 3, name: "Вечерний блеск", desc: "Рост 146-152", price: 1800, image: "img/dress3.jpg", category: "child_10_13" },
+            { id: 4, name: "Черное бархат", desc: "Размер: 44-46", price: 3000, image: "img/dress4.jpg", category: "adult" }
         ];
 
         let cart = {};
 
-        // Функция отображения товаров
         function renderProducts(filter = 'all') {
             const container = document.getElementById('products-container');
-            container.innerHTML = ""; // Очищаем
-
-            // Фильтруем список
+            container.innerHTML = "";
             const filtered = products.filter(p => filter === 'all' || p.category === filter);
 
             filtered.forEach(p => {
                 const count = cart[p.id] ? cart[p.id].count : 0;
-                
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
-                    <div class="counter" style="display: ${count > 0 ? 'block' : 'none'}">${count} шт</div>
-                    <img src="${p.image}" alt="${p.name}" onerror="this.src='https://placehold.co/300x400?text=Нет+фото'">
+                    <div class="counter" style="display: ${count > 0 ? 'block' : 'none'}">${count}</div>
+                    <img src="${p.image}" alt="${p.name}" onerror="this.src='https://placehold.co/300x400?text=Photo'">
                     <div class="card-body">
                         <div>
                             <div class="card-title">${p.name}</div>
                             <div class="card-desc">${p.desc}</div>
                         </div>
-                        <div class="card-price">${p.price.toLocaleString()} ₽</div>
-                        <button class="add-btn" onclick="addToCart(${p.id})">
-                            ${count > 0 ? 'Добавить ещё' : 'Выбрать'}
-                        </button>
+                        <div class="card-price">${p.price} ₽</div>
+                        <button class="add-btn" onclick="addToCart(${p.id})">${count > 0 ? 'Добавить ('+count+')' : 'Выбрать'}</button>
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        // Логика фильтров
         function filterProducts(category, btn) {
-            // Подсветка кнопок
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
-            // Перерисовка
             renderProducts(category);
         }
 
-        // Добавление в корзину
         function addToCart(id) {
             if (!cart[id]) {
                 const product = products.find(p => p.id === id);
@@ -163,7 +85,7 @@
             }
             cart[id].count++;
             
-            // Находим активную кнопку фильтра, чтобы не сбить фильтр при обновлении
+            // Сохраняем активный фильтр
             const activeBtn = document.querySelector('.filter-btn.active');
             const currentCategory = activeBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
             
@@ -171,7 +93,6 @@
             updateMainButton();
         }
 
-        // Кнопка заказа
         function updateMainButton() {
             let total = 0;
             for (let id in cart) total += cart[id].price * cart[id].count;
@@ -179,14 +100,20 @@
             const btn = document.getElementById('order-btn');
             if (total > 0) {
                 btn.style.display = "block";
-                btn.innerText = `ОФОРМИТЬ АРЕНДУ НА ${total.toLocaleString()} ₽`;
+                btn.innerText = `ОФОРМИТЬ АРЕНДУ: ${total} ₽`;
             } else {
                 btn.style.display = "none";
             }
         }
 
-        // Отправка в бота
         function sendOrder() {
+            // Проверка: работает ли телеграм
+            if (!tg.initDataUnsafe || !tg.initDataUnsafe.query_id) {
+                // Если открыто не в боте, а в браузере
+               // alert("Эта кнопка работает только внутри Telegram Бота!");
+                // Но мы всё равно попробуем отправить данные, вдруг сработает
+            }
+
             let items = [];
             let total = 0;
             for (let id in cart) {
@@ -194,13 +121,19 @@
                 items.push(`${p.name} (${p.desc}) x${p.count} - ${p.price * p.count}р`);
                 total += p.price * p.count;
             }
+
             const data = { items: items, total: total };
+            
+            // ОТПРАВКА ДАННЫХ
             tg.sendData(JSON.stringify(data));
+            
+            // На всякий случай закрываем окно принудительно (для Android)
+            setTimeout(() => {
+                tg.close();
+            }, 100);
         }
 
-        // Запуск при старте
         renderProducts();
-
     </script>
 </body>
 </html>
