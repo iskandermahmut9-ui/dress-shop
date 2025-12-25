@@ -38,6 +38,9 @@
         const tg = window.Telegram.WebApp;
         tg.expand(); 
 
+        // ТВОЙ ID ДЛЯ ЗАКАЗОВ
+        const ADMIN_ID = '984929835';
+
         const products = [
             { id: 42, name: "Лот 42 🌸", desc: "Размер: 42-44", price: 2500, image: "img/dress1.jpg", category: "adult" },
             { id: 2, name: "Принцесса", desc: "Рост 116-122", price: 1500, image: "img/dress2.jpg", category: "child_3_7" },
@@ -85,7 +88,6 @@
             }
             cart[id].count++;
             
-            // Сохраняем активный фильтр
             const activeBtn = document.querySelector('.filter-btn.active');
             const currentCategory = activeBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
             
@@ -107,30 +109,39 @@
         }
 
         function sendOrder() {
-            // Проверка: работает ли телеграм
-            if (!tg.initDataUnsafe || !tg.initDataUnsafe.query_id) {
-                // Если открыто не в боте, а в браузере
-               // alert("Эта кнопка работает только внутри Telegram Бота!");
-                // Но мы всё равно попробуем отправить данные, вдруг сработает
-            }
-
-            let items = [];
+            // 1. Формируем текст сообщения
+            let message = "ЗАКАЗ АРЕНДЫ (Dress Shop):\n\n";
             let total = 0;
+
             for (let id in cart) {
                 const p = cart[id];
-                items.push(`${p.name} (${p.desc}) x${p.count} - ${p.price * p.count}р`);
-                total += p.price * p.count;
+                if (p.count > 0) {
+                    message += `👗 ${p.name} (${p.desc})\n   Кол-во: ${p.count} шт.\n   Цена: ${p.price * p.count} ₽\n\n`;
+                    total += p.price * p.count;
+                }
             }
+            message += `💰 ИТОГО: ${total} ₽`;
 
-            const data = { items: items, total: total };
-            
-            // ОТПРАВКА ДАННЫХ
-            tg.sendData(JSON.stringify(data));
-            
-            // На всякий случай закрываем окно принудительно (для Android)
-            setTimeout(() => {
-                tg.close();
-            }, 100);
+            // 2. Показываем попап подтверждения
+            tg.showPopup({
+                title: 'Оформление заказа',
+                message: `Общая сумма: ${total} ₽\n\nНажмите "Отправить", чтобы перейти в чат с администратором.`,
+                buttons: [
+                    {id: 'send', type: 'default', text: 'Отправить'},
+                    {id: 'cancel', type: 'destructive', text: 'Отмена'}
+                ]
+            }, function(btnId) {
+                if (btnId === 'send') {
+                    // 3. Копируем текст в буфер обмена
+                    navigator.clipboard.writeText(message).then(() => {
+                        // 4. Открываем личку по ID
+                        tg.openTelegramLink('tg://user?id=' + ADMIN_ID);
+                    }).catch(err => {
+                        // Если копирование не удалось, пробуем просто открыть ссылку
+                        tg.openTelegramLink('tg://user?id=' + ADMIN_ID);
+                    });
+                }
+            });
         }
 
         renderProducts();
